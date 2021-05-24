@@ -8,6 +8,7 @@ import pandas as pd
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
+import json
 import time
 
 
@@ -166,7 +167,7 @@ async def fetch_dataframes(url_br, url_cities, url_popmunic, url_gpscities, url_
     :param url_gpscities: caminho do conjunto de dados contendo informações geográficas de latitude e longitude dos municípios brasileiros
     :param url_geojson_br: caminho do arquivo geojson do mapa geográfico brasileiro, dividido por UF
     :param chunk_size: quantidade de linhas por parte, usado para particionar o carregamento de DataFrames muito grandes
-    :param logger: objeto Log para registrar os passos dos processamentos dos DatFrames
+    :param logger: biblioteca para registrar os passos dos processamentos dos DatFrames
     :return: df_br,     -> DataFrame com dados de covid no Brasil transformado
             df_cities,  -> DataFrame com dados de covid nos municípios brasileiros transformado
             df_popuf,   -> DataFrame com dados populacionais por UF
@@ -205,9 +206,8 @@ async def fetch_dataframes(url_br, url_cities, url_popmunic, url_gpscities, url_
 
                 logger.error(f'{future_data_loader[task]} generated an exception: {exc}')
             else:
-
-                logger.info(
-                    f'dataset {future_data_loader[task]} carregado - {len(datasets[future_data_loader[task]])} linhas')
+                print(f'dataset {future_data_loader[task]} carregado - {len(datasets[future_data_loader[task]])} linhas')
+                logger.info(f'dataset {future_data_loader[task]} carregado - {len(datasets[future_data_loader[task]])} linhas')
 
     logger.info(f'Carga de dados finalizada. Tempo de execução: {time.perf_counter() - start} ')
 
@@ -227,4 +227,4 @@ async def fetch_dataframes(url_br, url_cities, url_popmunic, url_gpscities, url_
 
     logger.info(f'Tratamento os dados finalizada. Tempo de execução: {time.perf_counter() - start} ')
 
-    return df_br, df_cities, df_popuf, df_uf
+    return df_br, df_cities, df_popuf, df_uf, datasets['gj_br']

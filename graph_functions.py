@@ -79,9 +79,6 @@ def graph_active_cases_cum(data_BR):
                        showarrow=True,
                        arrowhead=1)
 
-    # Set x-axis title
-    # fig.update_xaxes(title_text="Data")
-
     # Set y-axes titles
     fig.update_yaxes(title_text="Casos Confirmados", secondary_y=False)
     fig.update_yaxes(title_text="Diferença", secondary_y=True)
@@ -430,13 +427,13 @@ def kpi_total_1dose(data_BR):
     crescimento = data_BR['vaccinated'].iloc[-2]
 
     fig.add_trace(go.Indicator(
-        mode="number+delta",
-        value=total_vacinados,
-        number={'valueformat': ',.4s', },
-        delta={'reference': crescimento, 'relative': False, 'valueformat': ',.5s'},
-        title={'text': '1ª Dose'},
-        domain={'x': [0.15, 0], 'y': [0.001, 0]}
-    )
+            mode="number+delta",
+            value=total_vacinados,
+            number={'valueformat': ',.4s', },
+            delta={'reference': crescimento, 'relative': False, 'valueformat': ',.5s'},
+            title={'text': '1ª Dose'},
+            domain={'x': [0.15, 0], 'y': [0.001, 0]}
+        )
     )
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),
@@ -458,16 +455,108 @@ def kpi_total_2dose(data_BR):
     crescimento = data_BR['vaccinated_second'].iloc[-2]
 
     fig.add_trace(go.Indicator(
-        mode="number+delta",
-        value=total_vacinados,
-        number={'valueformat': ',.4s', },
-        delta={'reference': crescimento, 'relative': False, 'valueformat': ',.5s'},
-        title={'text': '2ª Dose'},
-        domain={'x': [0.15, 0], 'y': [0.001, 0]}
-    )
+            mode="number+delta",
+            value=total_vacinados,
+            number={'valueformat': ',.4s', },
+            delta={'reference': crescimento, 'relative': False, 'valueformat': ',.5s'},
+            title={'text': '2ª Dose'},
+            domain={'x': [0.15, 0], 'y': [0.001, 0]}
+        )
     )
     fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),
     )
 
     return fig
+
+
+def kpi_qtd_dias_vac(data_BR):
+    """
+    Gera o indicador da quantidade de dias desde o início da vacinação no Brasil
+    :param data_BR: Pandas DataFrame com os dados de doses de vacinas contra covid-19 aplicadas no Brasil
+    :return: Plotly Fig object
+    """
+
+    t_menor = data_BR[~data_BR['vaccinated'].isna()]['date'].min()
+    t_maior = data_BR[~data_BR['vaccinated'].isna()]['date'].max()
+    t_decorrido = t_maior - t_menor
+    t_decorrido = int(str(t_decorrido).split()[0])
+    fig = go.Figure()
+    fig.add_trace(go.Indicator(
+            mode="number",
+            value=t_decorrido,
+            domain={'x': [0.3, 0.3], 'y': [0.5, 1]},
+            title={'text': "Tempo decorrido"},
+        )
+    )
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=0, b=0),
+    )
+
+    return fig
+
+
+def mapbox_cloropleth_percvac(data_UF, geo_UF):
+    """
+    Gera o gráfico cloroplético do percentual da população de cada UF vacinada com a 1a dose
+    :param data_UF: Pandas DataFrame com os dados de doses de vacinas contra covid-19 aplicadas por UF
+    :param geo_UF: GeoJson com as coordenadas de cada UF
+    :return: Plotly Figure Object
+    """
+
+    fig = go.Figure(go.Choroplethmapbox(
+        geojson=geo_UF,
+        featureidkey="properties.SIGLA_UF",
+        locations=data_UF['state'],
+        z=data_UF['perc_vac'],
+        colorscale="Mint",
+        zmin=0,
+        zmax=30,
+        marker_line_width=0.8,
+        colorbar={'len': 0.97, 'nticks': 6, 'thickness': 15, 'borderwidth': 0, 'title': '% Vac.'},
+        hovertemplate='<b>%{properties.NM_UF}</b><br><br>Pop. Vacinada: %{z:.2f}%',
+        name="",
+    )
+    )
+    fig.update_layout(
+        mapbox_style="carto-positron",
+        mapbox_zoom=3,
+        mapbox_center={'lat': -16.701591, 'lon': -49.164524},
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        separators=',.',
+        title=dict(
+            text='<b>1ª Dose por UF</b> - % da população vacinada',
+            xref='paper',
+            y=0.9,
+            x=0.92
+        ),
+    )
+
+    return fig
+
+
+def mapbox_cases_p100k(df_cities):
+
+    _df = df_cities.query('date == @df_cities.date.max()')
+    mapa = px.scatter_mapbox(
+        _df,
+        lat='lat',
+        lon='lon',
+        hover_name='city',
+        color_continuous_scale=px.colors.sequential.matter,
+        color='totalCases_per_100k_inhabitants',
+        zoom=3,
+        hover_data={'lat': False, 'lon': False, 'totalCases': True, 'deaths': True,
+                    'totalCases_per_100k_inhabitants': ':.2f'},
+        labels={'totalCases': 'Casos', 'deaths': 'Óbitos', 'totalCases_per_100k_inhabitants': 'Casos p/ 100mil hab.'},
+        title='<b>Covid-19</b> Proporção de casos por 100mil habitantes'
+    )
+
+    mapa.update_layout(
+        mapbox_style='open-street-map',
+        margin={'r': 0, 't': 0, 'l': 0, 'b': 0},
+        title_x=0.5,
+        title_y=0.96,
+    )
+
+    return mapa

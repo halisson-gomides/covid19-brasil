@@ -7,14 +7,8 @@
 import asyncio
 from data_functions import fetch_dataframes
 import logging
-from plotly.graph_objs import Figure
-from graph_functions import (
-graph_active_cases_cum, graph_deaths_cum,
-graph_confirmed_cases_by_month, graph_deaths_by_month,
-graph_vaccines_doses_cum, graph_vaccination_by_day,
-kpi_total_doses, kpi_total_1dose,
-kpi_total_2dose
-)
+logging.root.handlers
+import graph_functions as gf
 import plotly.io as pio
 pio.kaleido.scope.default_format = "svg"
 pio.kaleido.scope.default_width = 300
@@ -38,15 +32,44 @@ if __name__ == "__main__":
     logging.basicConfig(filename='gera_graficos_covid.log',
                         filemode='w',
                         format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%d-%m-%Y %H:%M:%S')
+                        datefmt='%d/%m/%Y %H:%M:%S',
+                        level=logging.INFO)
 
     # Instancia o objeto de Log
-    logger = logging.getLogger()
+    # logger = logging.getLogger()
+    # logger.setLevel(logging.INFO)
 
     # Fazendo a carga dos dados atualizados e tratamento dos mesmos
-    logger.info('Iniciando carga de dados...')
-    df_br, df_cities, df_popuf, df_uf = asyncio.run(fetch_dataframes(url_br, url_cities, url_popmunic, url_gpscities, url_geojson_br, chunk_size, logger))
+    logging.info('Iniciando carga de dados...')
+    print('Iniciando carga de dados...')
+    df_br, df_cities, df_popuf, df_uf, gj_uf_br = asyncio.run(fetch_dataframes(url_br, url_cities, url_popmunic, url_gpscities, url_geojson_br, chunk_size, logging))
 
+    #---------------------------------------------------------------------------------------------
     # gerando os gráficos atualizados
-    fig_casos_ativos_cum = Figure(graph_active_cases_cum(df_br))
-    fig_casos_ativos_cum.write_html(graphs_path+'/casos-ativos_x_consorcio.html')
+    # ---------------------------------------------------------------------------------------------
+
+    # KPI's
+    logging.info('Gerando os KPIs...')
+    kpi_doses_aplicadas = gf.kpi_total_doses(df_br)
+    kpi_doses_aplicadas.write_image(ind_path+'/ind-qtd-vacinas.svg')
+
+    kpi_1a_dose = gf.kpi_total_1dose(df_br)
+    kpi_1a_dose.write_image(ind_path+'/ind-qtd-1dose.svg')
+
+    kpi_2a_dose = gf.kpi_total_2dose(df_br)
+    kpi_2a_dose.write_image(ind_path + '/ind-qtd-2dose.svg')
+
+    # Vacinas
+    logging.info('Gerando o gráfico de evolução da vacinação')
+    dv = df_br[~df_br['vaccinated'].isna()]     # recorte contendo apenas os registros a partir do início da vacinação
+    dt_inicio_vac = dv['date'].min()            # data de inicio da vacinação no Brasil
+    df_50M = df_br.loc[(df_br['vaccinated'] + df_br['vaccinated_second']) > 49999999].iloc[0] # dados do primeiro dia em que o Brasil alcançou a marca de 50M de doses aplicadas
+    dias_50M = df_50M['date'] - dt_inicio_vac
+    dias_50M = int(str(dias_50M).split()[0]) # número de dias que demorou para alcançar a marca de 50M de doses aplicadas no Brasil
+    fig_evol_vac = gf.graph_vaccines_doses_cum(df_vac=dv, df_50M=df_50M, dias_50M=dias_50M)
+    fig_evol_vac.write_html(graphs_path+'/casos-ativos_x_consorcio.html')
+    
+    logging.info('Gerando o gráfico de casos ativos...')
+    fig_casos_ativos_cum = gf.graph_active_cases_cum(df_br)
+    fig_casos_ativos_cum.write_html(graphs_path+'/evolucao-vacinacao.html')
+

@@ -6,6 +6,7 @@
 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
 
 
 def graph_active_cases_cum(data_BR):
@@ -332,31 +333,32 @@ def graph_vaccination_by_day(df_vac):
     :return: Plotly Fig object
     """
 
-    df_vac['1_dose_7d'] = df_vac['newVaccinated'].rolling(7).mean()
-    df_vac['2_dose_7d'] = df_vac['newVaccinated_second'].rolling(7).mean()
+    _df_vac = df_vac.copy()
+    _df_vac['1_dose_7d'] = df_vac['newVaccinated'].rolling(7).mean()
+    _df_vac['2_dose_7d'] = df_vac['newVaccinated_second'].rolling(7).mean()
 
     fig = go.Figure(
         data=[
             go.Bar(
-                x=df_vac['date'],
-                y=df_vac['newVaccinated'],
+                x=_df_vac['date'],
+                y=_df_vac['newVaccinated'],
                 name='primeira dose',
                 opacity=0.5
             ),
             go.Bar(
-                x=df_vac['date'],
-                y=df_vac['newVaccinated_second'],
+                x=_df_vac['date'],
+                y=_df_vac['newVaccinated_second'],
                 name='segunda dose',
             ),
             go.Scatter(
-                x=df_vac['date'],
-                y=df_vac['1_dose_7d'],
+                x=_df_vac['date'],
+                y=_df_vac['1_dose_7d'],
                 line=dict(color='MediumPurple', width=5),
                 name='média móvel 1ª dose'
             ),
             go.Scatter(
-                x=df_vac['date'],
-                y=df_vac['2_dose_7d'],
+                x=_df_vac['date'],
+                y=_df_vac['2_dose_7d'],
                 line=dict(color='Coral', width=5),
                 name='média móvel 2ª dose'
             )

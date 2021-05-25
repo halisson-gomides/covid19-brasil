@@ -206,7 +206,6 @@ async def fetch_dataframes(url_br, url_cities, url_popmunic, url_gpscities, url_
 
                 logger.error(f'{future_data_loader[task]} generated an exception: {exc}')
             else:
-                print(f'dataset {future_data_loader[task]} carregado - {len(datasets[future_data_loader[task]])} linhas')
                 logger.info(f'dataset {future_data_loader[task]} carregado - {len(datasets[future_data_loader[task]])} linhas')
 
     logger.info(f'Carga de dados finalizada. Tempo de execução: {time.perf_counter() - start} ')

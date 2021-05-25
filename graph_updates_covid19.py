@@ -25,7 +25,7 @@ url_br = "https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-
 url_cities = "https://github.com/wcota/covid19br/blob/master/cases-brazil-cities-time.csv.gz?raw=true"
 url_popmunic = 'datasets/originais/populacao_2020.xls'
 url_gpscities = "https://raw.githubusercontent.com/wcota/covid19br/master/gps_cities.csv"
-url_geojson_br = 'geojson/brasil-uf-compressed.json'
+url_geojson_br = 'geojson/brasil-uf-compressed-utf8.json'
 chunk_size = 50000
 maps_path = 'graficos'
 graphs_path = 'graficos/leg-int'
@@ -61,7 +61,10 @@ if __name__ == "__main__":
     kpi_2a_dose = gf.kpi_total_2dose(df_br)
     kpi_2a_dose.write_image(os.path.join(ind_path, 'ind-qtd-2dose.svg'))
 
-    # Vacinas
+    kpi_dias_doinicio = gf.kpi_qtd_dias_vac(data_BR=df_br)
+    kpi_dias_doinicio.write_image(os.path.join(ind_path, 'ind-tempo-vacinacao.svg'))
+
+    # VACINAS
     logging.info('Gerando o gráfico de evolução da vacinação')
     dv = df_br[~df_br['vaccinated'].isna()]     # recorte contendo apenas os registros a partir do início da vacinação
     dt_inicio_vac = dv['date'].min()            # data de inicio da vacinação no Brasil
@@ -69,12 +72,13 @@ if __name__ == "__main__":
     dias_50M = df_50M['date'] - dt_inicio_vac
     dias_50M = int(str(dias_50M).split()[0]) # número de dias até alcançar a marca de 50M de doses aplicadas no Brasil
     fig_evol_vac = gf.graph_vaccines_doses_cum(df_vac=dv, df_50M=df_50M, dias_50M=dias_50M)
-    fig_evol_vac.write_html(os.path.join(graphs_path, 'casos-ativos_x_consorcio.html'))
+    fig_evol_vac.write_html(os.path.join(graphs_path, 'evolucao-vacinacao.html'))
 
     logging.info('Gerando o gráfico de vacinação por dia')
     fig_vac_pdia = gf.graph_vaccination_by_day(df_vac=dv)
     fig_vac_pdia.write_html(os.path.join(graphs_path, 'vacinacao-por-dia.html'))
 
+    # MAPAS
     logging.info('Gerando gráficos de mapa')
     map_perc_vacinados = gf.mapbox_cloropleth_percvac(data_UF=df_uf, geo_UF=gj_uf_br)
     map_perc_vacinados.write_html(os.path.join(maps_path, 'mapa_vacinacao.html'))
@@ -82,9 +86,10 @@ if __name__ == "__main__":
     map_casos_p100k = gf.mapbox_cases_p100k(df_cities=df_cities)
     map_casos_p100k.write_html(os.path.join(maps_path, 'mapa-casos-p-100k-h.html'))
 
+    # CASOS
     logging.info('Gerando gráfico de casos ativos e confirmados...')
     fig_casos_ativos_cum = gf.graph_active_cases_cum(df_br)
-    fig_casos_ativos_cum.write_html(os.path.join(graphs_path, 'evolucao-vacinacao.html'))
+    fig_casos_ativos_cum.write_html(os.path.join(graphs_path, 'casos-ativos_x_consorcio.html'))
 
     per = df_br['date'].dt.to_period('M')
     agg_mes = df_br.groupby(per).agg({
@@ -93,7 +98,8 @@ if __name__ == "__main__":
     fig_casos_confirmados  = gf.graph_confirmed_cases_by_month(p_mes=agg_mes)
     fig_casos_confirmados.write_html(os.path.join(graphs_path, 'casos-p-mes.html'))
 
-    logging.info('Gerando gráfico de óbitods acumulados e por mês...')
+    # OBITOS
+    logging.info('Gerando gráfico de óbitos acumulados e por mês...')
     fig_obitos_acumulados = gf.graph_deaths_cum(data_BR=df_br)
     fig_obitos_acumulados.write_html(os.path.join(graphs_path, 'obitos_x_consorcio.html'))
 
@@ -106,3 +112,4 @@ if __name__ == "__main__":
         json.dump(record, atualizacao)
 
     print('OK!')
+

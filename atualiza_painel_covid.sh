@@ -38,7 +38,7 @@ fi
 ######################################################################################################
 cp $CAMINHO_ARQS_SCRIPT/mapa* $CAMINHO_ARQS_PAINEL/graficos/
 cp $CAMINHO_ARQS_SCRIPT/leg-int/* $CAMINHO_ARQS_PAINEL/graficos/leg-int/
-cp ./dt-atualizacao-painel-covid.json $CAMINHO_ARQS_PAINEL
+cp $CAMINHO_ARQS_SCRIPT/../dt-atualizacao-painel-covid.json $CAMINHO_ARQS_PAINEL
 
 ######################################################################################################
 # ATUALIZANDO OS INDICADORES QUE VÃO PARA O PAINEL
@@ -63,7 +63,6 @@ KPI_QTD_VAC="`grep -o '>\([0-9]\{2,\}\.[0-9]\{1,\}.\)<' $CAMINHO_ARQS_SCRIPT/ind
 sed -i 's/>\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"$KPI_QTD_VAC"'</' $CAMINHO_ARQS_PAINEL/graficos/indicadores/ind-qtd-vacinas.svg
 
 
-###############################################
 # 1a DOSE
 ###############################################
 
@@ -74,7 +73,6 @@ KPI_1DOSE=(`grep -oe '>\([0-9]\{2,\}\.[0-9]\{1,\}.\)<' -e '>▲\([0-9]\{2,\}\.[0
 sed -i 's/>\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"${KPI_1DOSE[0]}"'</; s/>▲\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"${KPI_1DOSE[1]}"'</' $CAMINHO_ARQS_PAINEL/graficos/indicadores/ind-qtd-1dose.svg
 
 
-###############################################
 # 2a DOSE
 ###############################################
 

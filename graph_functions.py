@@ -498,7 +498,7 @@ def kpi_qtd_dias_vac(data_BR):
     return fig
 
 
-def mapbox_cloropleth_percvac(data_UF, geo_UF):
+def mapbox_cloropleth_percvac(data_UF, geo_UF, map_colors:dict={}, ):
     """
     Gera o gráfico cloroplético do percentual da população de cada UF vacinada com a 1a dose
     :param data_UF: Pandas DataFrame com os dados de doses de vacinas contra covid-19 aplicadas por UF
@@ -506,33 +506,57 @@ def mapbox_cloropleth_percvac(data_UF, geo_UF):
     :return: Plotly Figure Object
     """
 
-    fig = go.Figure(go.Choroplethmapbox(
+    # fig = go.Figure(go.Choroplethmapbox(
+    #     geojson=geo_UF,
+    #     featureidkey="properties.SIGLA_UF",
+    #     locations=data_UF['state'],
+    #     z=data_UF['perc_vac'],
+    #     colorscale="Mint",
+    #     zmin=0,
+    #     zmax=30,
+    #     marker_line_width=0.8,
+    #     colorbar={'len': 0.97, 'nticks': 6, 'thickness': 15, 'borderwidth': 0, 'title': '% Vac.'},
+    #     hovertemplate='<b>%{properties.NM_UF}</b><br><br>Pop. Vacinada: %{z:.2f}%',
+    #     name="",
+    # )
+    # )
+    # fig.update_layout(
+    #     mapbox_style="carto-positron",
+    #     mapbox_zoom=3,
+    #     mapbox_center={'lat': -16.701591, 'lon': -49.164524},
+    #     margin={"r": 0, "t": 0, "l": 0, "b": 0},
+    #     separators=',.',
+    #     title=dict(
+    #         text='<b>1ª Dose por UF</b> - % da população vacinada',
+    #         xref='paper',
+    #         y=0.9,
+    #         x=0.92
+    #     ),
+    # )
+
+    # ------------------------------ Usando plotly express e GeoJson
+    fig = px.choropleth_mapbox(
+        data_UF,
         geojson=geo_UF,
+        color='faixa_perc',
+        locations='state',
         featureidkey="properties.SIGLA_UF",
-        locations=data_UF['state'],
-        z=data_UF['perc_vac'],
-        colorscale="Mint",
-        zmin=0,
-        zmax=30,
-        marker_line_width=0.8,
-        colorbar={'len': 0.97, 'nticks': 6, 'thickness': 15, 'borderwidth': 0, 'title': '% Vac.'},
-        hovertemplate='<b>%{properties.NM_UF}</b><br><br>Pop. Vacinada: %{z:.2f}%',
-        name="",
-    )
+        color_discrete_map=map_colors,
+        center={'lat': -16.701591, 'lon': -49.164524},
+        mapbox_style="carto-positron",
+        title='<b>1ª Dose por UF</b> - % da população vacinada',
+        hover_name='NM_UF',
+        hover_data={'perc_vac': ':,.2f%', 'state': False, 'faixa_perc': False},
+        labels={'perc_vac': 'Pop. Vacinada', 'faixa_perc': '% Vacinados'},
+        zoom=3
     )
     fig.update_layout(
-        mapbox_style="carto-positron",
-        mapbox_zoom=3,
-        mapbox_center={'lat': -16.701591, 'lon': -49.164524},
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        title_x=0.7,
+        title_y=0.96,
         separators=',.',
-        title=dict(
-            text='<b>1ª Dose por UF</b> - % da população vacinada',
-            xref='paper',
-            y=0.9,
-            x=0.92
-        ),
     )
+    fig.update_geos(fitbounds="locations", visible=False)
 
     return fig
 

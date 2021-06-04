@@ -5,10 +5,10 @@
 ########################################
 
 import pandas as pd
+import numpy as np
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
-import json
 import time
 
 
@@ -101,15 +101,33 @@ async def transform_popuf(df_munic) -> 'DataFrame':
     '''
     Função para transformar o DataFrame df_popmunic, trata o dado de POPULAÇÃO ESTIMADA e retonar outro dataframe
     agregado por UF
-    :param df_munic: dataframe com dados populacionais dos municípios
+    :param df_munic: Dicionario de DataFrames com dados populacionais dos municípios e por UF
     :return: Pandas DataFrame
     '''
 
-    df_munic['POPULAÇÃO ESTIMADA'] = df_munic['POPULAÇÃO ESTIMADA'].apply(lambda x: str(x).split('(')[0])
-    df_munic['POPULAÇÃO ESTIMADA'] = df_munic['POPULAÇÃO ESTIMADA'].astype(int)
-    _popuf = df_munic[['UF', 'POPULAÇÃO ESTIMADA']].groupby('UF').sum().reset_index()
+    # ---- Trata o DataFrame de População do Brasil e UFs ----
+    # Exclui uma coluna vazia e as linhas que contém a string 'Brasil' e 'Região'
+    pop_uf = df_munic['BRASIL E UFs'].drop(columns='Unnamed: 1').drop(
+        np.where(df_munic['BRASIL E UFs'].iloc[:, 0].str.contains('Brasil|Região', case=False))[0]
+    ).reset_index(drop=True)
 
-    return _popuf
+    # Trata os valores populacionais que contém referências entre ()
+    pop_uf['POPULAÇÃO ESTIMADA'] = pop_uf['POPULAÇÃO ESTIMADA'].apply(
+        lambda x: int(x.split('(')[0].replace('.', '')) if isinstance(x, str) else x)
+
+    # Renomeia as colunas que sobraram
+    pop_uf.rename(columns={'BRASIL E UNIDADES DA FEDERAÇÃO': 'NM_UF', 'POPULAÇÃO ESTIMADA': 'POPULACAO'}, inplace=True)
+
+    # ---- Trata o DataFrame de População de Municípios ----
+    _pop_munic = df_munic['Municípios'].drop(index=df_munic['Municípios'].index[-9:])
+    _pop_munic['POPULAÇÃO ESTIMADA'] = _pop_munic['POPULAÇÃO ESTIMADA'].apply(lambda x: str(x).split('(')[0])
+    _pop_munic['POPULAÇÃO ESTIMADA'] = _pop_munic['POPULAÇÃO ESTIMADA'].astype(int)
+
+    # Adciona a sigla da UF no DataFrame pop_uf baseado na populacao do DataFrame _pop_munic
+    pop_uf['UF'] = pop_uf['POPULACAO'].map(_pop_munic[['UF', 'POPULAÇÃO ESTIMADA']].groupby('UF')
+                                           .sum().reset_index().set_index('POPULAÇÃO ESTIMADA')['UF'])
+
+    return pop_uf
 
 
 async def transform_dfcities(df_cities, df_gps_cities) -> 'DataFrame':
@@ -148,9 +166,24 @@ async def transform_dfuf(df, df_popuf) -> 'DataFrame':
     # Filtra os dados para as UFs e para a data mais recente
     _df_UF = df.query("state != 'TOTAL' and date == @df['date'].max()").copy()
 
-    # cria nova coluna de percentual de vacinados
+    # cria novas colunas
     _df_UF['perc_vac'] = (_df_UF.loc[:, 'vaccinated'] / _df_UF.loc[:, 'state'].map(
-        df_popuf.set_index('UF').loc[:, 'POPULAÇÃO ESTIMADA'])) * 100
+        df_popuf.set_index('UF').loc[:, 'POPULACAO'])) * 100
+    _df_UF['NM_UF'] = _df_UF.loc[:, 'state'].map(df_popuf.set_index('UF').loc[:, 'NM_UF'])
+
+    # Definindo faixa de valores de população vacinada por UF
+    limite_inferior = int(round(_df_UF['perc_vac'].min(), 0))
+    limite_superior = int(round(_df_UF['perc_vac'].max(), 0))
+    cut_bins = np.linspace(limite_inferior - 2, limite_superior + 2, num=5)
+    cut_bins = np.ceil(cut_bins).astype(int)
+    cut_labels = [f'{cut_bins[i]}-{cut_bins[i + 1]}%' if i + 2 < len(cut_bins) else f'> {cut_bins[i]}%' for i in
+                  range(0, len(cut_bins) - 1)]
+
+    _df_UF['faixa_perc'] = pd.cut(
+        _df_UF['perc_vac'],
+        bins=cut_bins,
+        labels=cut_labels,
+    )
 
     return _df_UF
 
@@ -179,7 +212,8 @@ async def fetch_dataframes(url_br, url_cities, url_popmunic, url_gpscities, url_
     D_ARGS = {
         'df_br': dict(data_url=url_br, date_f=['date']),
         'df_cities': dict(data_url=url_cities, date_f=['date'], compression='gzip', chunksize=chunk_size),
-        'df_popmunic': dict(data_url=url_popmunic, tipo='xls', sheet_name='Municípios', skiprows=1, skipfooter=16),
+        'df_popmunic': dict(data_url=url_popmunic, tipo='xls', sheet_name=['BRASIL E UFs', 'Municípios'], skiprows=1,
+                            skipfooter=7),
         'df_gpscities': dict(data_url=url_gpscities),
         'gj_br': dict(data_url=url_geojson_br, tipo='json'),
     }
@@ -206,7 +240,8 @@ async def fetch_dataframes(url_br, url_cities, url_popmunic, url_gpscities, url_
 
                 logger.error(f'{future_data_loader[task]} generated an exception: {exc}')
             else:
-                logger.info(f'dataset {future_data_loader[task]} carregado - {len(datasets[future_data_loader[task]])} linhas')
+                logger.info(
+                    f'dataset {future_data_loader[task]} carregado - {len(datasets[future_data_loader[task]])} linhas')
 
     logger.info(f'Carga de dados finalizada. Tempo de execução: {time.perf_counter() - start} ')
 

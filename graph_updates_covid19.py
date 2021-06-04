@@ -25,7 +25,7 @@ url_br = "https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-
 url_cities = "https://github.com/wcota/covid19br/blob/master/cases-brazil-cities-time.csv.gz?raw=true"
 url_popmunic = 'datasets/originais/populacao_2020.xls'
 url_gpscities = "https://raw.githubusercontent.com/wcota/covid19br/master/gps_cities.csv"
-url_geojson_br = 'geojson/brasil-uf-compressed-utf8.json'
+url_geojson_br = 'geojson/brasil-uf-compressed.json'
 chunk_size = 50000
 maps_path = 'graficos'
 graphs_path = 'graficos/leg-int'
@@ -80,7 +80,9 @@ if __name__ == "__main__":
 
     # MAPAS
     logging.info('Gerando gráficos de mapa')
-    map_perc_vacinados = gf.mapbox_cloropleth_percvac(data_UF=df_uf, geo_UF=gj_uf_br)
+    cut_labels = df_uf['faixa_perc'].unique().tolist()
+    dict_colors = {label: color for label, color in zip(cut_labels, ['#bff7ff', '#8fd1e3', '#3088AE', '#005073'])}
+    map_perc_vacinados = gf.mapbox_cloropleth_percvac(data_UF=df_uf, geo_UF=gj_uf_br, map_colors=dict_colors)
     map_perc_vacinados.write_html(os.path.join(maps_path, 'mapa_vacinacao.html'))
 
     map_casos_p100k = gf.mapbox_cases_p100k(df_cities=df_cities)

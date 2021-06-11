@@ -67,17 +67,17 @@ sed -i 's/>\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"$KPI_QTD_VAC"'</' $CAMINHO_ARQS_PAI
 ###############################################
 
 # CAPTURA O VALOR ATUALIZADO DA NOVA IMAGEM GERADA - TOTAL
-KPI_1DOSE=(`grep -oe '>\([0-9]\{2,\}\.[0-9]\{1,\}.\)<' -e '>▲\([0-9]\{2,\}\.[0-9]\{1,\}.\)<' $CAMINHO_ARQS_SCRIPT/indicadores/ind-qtd-1dose.svg | awk -F">|<" '{print $2}'`)
+KPI_1DOSE=(`grep -oe '>\([0-9]\{2,\}\.[0-9]\{1,\}.\)<' -e '>▲\([0-9]\{1,\}\.[0-9]\{1,\}.\)<' $CAMINHO_ARQS_SCRIPT/indicadores/ind-qtd-1dose.svg | awk -F">|<" '{print $2}'`)
 
 # SUBSTITUI OS VALORES ATUALIZADOS NA IMAGEM QUE VAI PRO PAINEL
-sed -i 's/>\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"${KPI_1DOSE[0]}"'</; s/>▲\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"${KPI_1DOSE[1]}"'</' $CAMINHO_ARQS_PAINEL/graficos/indicadores/ind-qtd-1dose.svg
+sed -i 's/>\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"${KPI_1DOSE[0]}"'</; s/>▲\([0-9]\{1,\}\.[0-9]\{1,\}.\)</>'"${KPI_1DOSE[1]}"'</' $CAMINHO_ARQS_PAINEL/graficos/indicadores/ind-qtd-1dose.svg
 
 
 # 2a DOSE
 ###############################################
 
 # CAPTURA O VALOR ATUALIZADO DA NOVA IMAGEM GERADA - TOTAL
-KPI_2DOSE=(`grep -oe '>\([0-9]\{2,\}\.[0-9]\{1,\}.\)<' -e '>▲\([0-9]\{2,\}\.[0-9]\{1,\}.\)<' $CAMINHO_ARQS_SCRIPT/indicadores/ind-qtd-2dose.svg | awk -F">|<" '{print $2}'`)
+KPI_2DOSE=(`grep -oe '>\([0-9]\{2,\}\.[0-9]\{1,\}.\)<' -e '>▲\([0-9]\{1,\}\.[0-9]\{1,\}.\)<' $CAMINHO_ARQS_SCRIPT/indicadores/ind-qtd-2dose.svg | awk -F">|<" '{print $2}'`)
 
 # SUBSTITUI OS VALORES ATUALIZADOS NA IMAGEM QUE VAI PRO PAINEL
-sed -i 's/>\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"${KPI_2DOSE[0]}"'</; s/>▲\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"${KPI_2DOSE[1]}"'</' $CAMINHO_ARQS_PAINEL/graficos/indicadores/ind-qtd-2dose.svg
+sed -i 's/>\([0-9]\{2,\}\.[0-9]\{1,\}.\)</>'"${KPI_2DOSE[0]}"'</; s/>▲\([0-9]\{1,\}\.[0-9]\{1,\}.\)</>'"${KPI_2DOSE[1]}"'</' $CAMINHO_ARQS_PAINEL/graficos/indicadores/ind-qtd-2dose.svg
